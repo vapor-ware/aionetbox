@@ -1,6 +1,6 @@
 import pytest
 
-from aio_netbox import AIONetbox
+from aio_netbox.client import AIONetbox
 
 class TestAIONetboxClient(object):
     """ Netbox AIOHTTP Client tests """

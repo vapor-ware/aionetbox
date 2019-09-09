@@ -10,7 +10,13 @@ class AIONetbox(object):
         self.port = port
         self.auth_token = auth_token
         self.loop = loop or asyncio.get_event_loop()
-        self.client = aiohttp.ClientSession()
+        self._client = None
+
+    def client(self):
+        if not self._client:
+            self._client = aiohttp.ClientSession()
+
+        return self._client
 
     def _build_url(self, route, **kwargs):
         return '{}{}/api{}'.format(self.host, ':{}'.format(self.port) if self.port else '', route)
@@ -26,11 +32,11 @@ class AIONetbox(object):
         if kwargs:
           url = "{}?{}".format(self._build_url(route), '&'.join('{}={}'.format(key, val) for key, val in kwargs.items()))
 
-        async with self.client.get(url, headers=headers) as resp:
+        async with self.client().get(url, headers=headers) as resp:
             return (await resp.json())['results']
 
     async def close(self):
-        await self.client.close()
+        await self.client().close()
 
 
 # Main method
