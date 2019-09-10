@@ -21,7 +21,7 @@ def parse_requirements(filename: str) -> List[str]:
 
 # Load the package's __init__.py file as a dictionary.
 pkg = {}
-with open(here / 'aio_netbox' / '__init__.py', 'r', 'utf-8') as f:
+with open(here / 'aionetbox' / '__init__.py', 'r', 'utf-8') as f:
     exec(f.read(), pkg)
 
 # Load the README
@@ -46,7 +46,7 @@ setup(
     author_email=pkg['__author_email__'],
     packages=find_packages(),
     package_data={'': ['LICENSE']},
-    package_dir={'aio_netbox': 'aio_netbox'},
+    package_dir={'aionetbox': 'aionetbox'},
     python_requires='>=3.6',
     install_requires=req,
     zip_safe=False,
