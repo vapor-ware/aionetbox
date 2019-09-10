@@ -22,16 +22,14 @@ class AIONetbox():
         self.port = port
         self.auth_token = auth_token
         self.loop = loop or asyncio.get_event_loop()
-        self._client = None
+        self.client = None
 
-    def client(self):
+    def _init_client(self):
         """
         An AIO HTTP request client factory for interfacing with netbox
         """
-        if not self._client:
-            self._client = aiohttp.ClientSession()
-
-        return self._client
+        if not self.client:
+            self.client = aiohttp.ClientSession()
 
 
     def _build_url(self, route, **kwargs):
@@ -67,14 +65,14 @@ class AIONetbox():
                    'content-type': 'text/plain'}
 
         url = self._build_url(route, **kwargs)
+        self._init_client()
 
-        async with self.client().get(url, headers=headers) as resp:
+        async with self.client.get(url, headers=headers) as resp:
             body = await resp.json(content_type='application/json')
-            if 'results' in body.keys():
-                return body['results']
-            else:
-                raise ValueError("Did not receive the data we expected")
+            if not 'results' in body:
+                raise ValueError('Did not receive the data we expected')
 
+            return body['results']
 
     async def close(self):
         """

@@ -45,9 +45,13 @@ class TestAIONetboxClient():
     @pytest.mark.asyncio
     async def test_get_passes_auth_token(self):
         """ stuff and things """
-        with patch.object(AIONetbox, 'client', return_value = asynctest.MagicMock()) as aiobutts:
-            tclient = AIONetbox(host='localhost', auth_token='mytoken')
-            print(tclient.client)
-            resp = await tclient.get('dcim/foo')
-            print(resp)
+        tclient = AIONetbox(host='localhost', auth_token='mytoken')
 
+        # https://stackoverflow.com/a/48762969/196832
+        mclient = asynctest.CoroutineMock()
+        mclient.get.return_value.__aenter__.return_value.json = asynctest.CoroutineMock(return_value={'results': []})
+
+        tclient.client = mclient
+
+        resp = await tclient.get('dcim/foo')
+        mclient.get.assert_called_with('localhost/api/dcim/foo', headers={'Authorization': 'Token mytoken', 'content-type': 'text/plain'})
