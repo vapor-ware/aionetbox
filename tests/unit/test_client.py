@@ -33,28 +33,31 @@ class TestAIONetboxClient():
         tclient = AIONetbox(host='localhost', auth_token='mytoken')
         assert tclient._build_url('/dcim/foo') == 'localhost/api/dcim/foo'
 
-
     def test_url_builder_with_bunk_route(self):
         """ test with a missing forward slash in the route """
 
         tclient = AIONetbox(host='localhost', auth_token='mytoken')
         assert tclient._build_url('dcim/foo') == 'localhost/api/dcim/foo'
 
-
-    def test_url_builder_with_kwarg_valid_params(self):
+    @pytest.mark.asyncio
+    async def test_url_builder_with_kwarg_valid_params(self):
         """ test with key/value pairs that should be serialized into url params
         """
 
         tclient = AIONetbox(host='localhost', auth_token='mytoken')
-        assert tclient._build_url('dcim/foo', foo='bar') == 'localhost/api/dcim/foo?foo=bar'
 
+        # A note about these mocks and why:
+        # https://stackoverflow.com/a/48762969/196832
+        mclient = asynctest.CoroutineMock()
+        mclient.get.return_value.__aenter__.return_value.json = asynctest.CoroutineMock(return_value={'results': []}) # noqa
 
-    def test_url_builder_with_kwarg_invalid_params(self):
-        """ test with key/value pairs that should be serialized into url params
-        """
+        tclient.client = mclient
 
-        tclient = AIONetbox(host='localhost', auth_token='mytoken')
-        assert tclient._build_url('dcim/foo', invalid='') == 'localhost/api/dcim/foo?invalid='
+        resp = await tclient.get('dcim/foo', foo='bar')
+        mclient.get.assert_called_with('localhost/api/dcim/foo',
+                                       headers={'Authorization': 'Token mytoken',
+                                                'content-type': 'text/plain'},
+                                       params={'foo': 'bar'})
 
     @pytest.mark.asyncio
     async def test_get_passes_auth_token(self):
@@ -73,8 +76,8 @@ class TestAIONetboxClient():
         resp = await tclient.get('dcim/foo')
         mclient.get.assert_called_with('localhost/api/dcim/foo',
                                        headers={'Authorization': 'Token specifictoken',
-                                                'content-type': 'text/plain'})
-
+                                                'content-type': 'text/plain'},
+                                       params={})
 
     @pytest.mark.asyncio
     async def test_get_raises_exception(self):
@@ -91,6 +94,27 @@ class TestAIONetboxClient():
 
         with pytest.raises(NoResultsException):
             resp = await tclient.get('dcim/foo')
+
+    @pytest.mark.asyncio
+    async def test_post_function(self):
+        """ test that post's are invoked with expected parameters """
+        tclient = AIONetbox(host='localhost', auth_token='mytoken')
+
+        # A note about these mocks and why:
+        # https://stackoverflow.com/a/48762969/196832
+        mclient = asynctest.CoroutineMock()
+        mclient.post.return_value.__aenter__.return_value.json = asynctest.CoroutineMock(return_value={}) # noqa
+
+        tclient.client = mclient
+
+        resp = await tclient.post('/dcim/foo', payload={'update': 'data'})
+        mclient.post.assert_called_with('localhost/api/dcim/foo',
+                                        headers={'Authorization': 'Token mytoken',
+                                                'content-type': 'text/plain'},
+                                        params={},
+                                        payload={'update': 'data'})
+
+
 
     @pytest.mark.asyncio
     async def test_close_client(self):

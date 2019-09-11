@@ -31,7 +31,7 @@ class AIONetbox():
             self.client = aiohttp.ClientSession()
 
 
-    def _build_url(self, route, **kwargs):
+    def _build_url(self, route):
         """ concatenate params to build the netbox API path to query
         Args:
             route - the path segment after /api, eg: '/dcim/devices'
@@ -39,21 +39,18 @@ class AIONetbox():
         Returns:
             url: a string representation of the full url.
         """
+
+        # note: bump with 110 from edge_monitor
+
         # Route will be kind to the user and prepend the / if omitted
         if not route.startswith('/'):
             route = '/{}'.format(route)
 
         # build the base url
-        url = '{}{}/api{}'.format(self.host,
-                                  ':{}'.format(self.port) if self.port
-                                  else '', route)
+        return '{}{}/api{}'.format(self.host,
+                                   ':{}'.format(self.port) if self.port
+                                   else '', route)
 
-        # convert key=value pairs into URL parameters
-        if kwargs:
-            url = '{}?{}'.format(url,
-                                 '&'.join('{}={}'.format(key, val) \
-                                          for key, val in kwargs.items()))
-        return url
 
     @retry_request(exceptions=(aiohttp.ClientError, asyncio.TimeoutError))
     async def get(self, route, **kwargs):
@@ -72,16 +69,44 @@ class AIONetbox():
         headers = {'Authorization': 'Token {}'.format(self.auth_token),
                    'content-type': 'text/plain'}
 
-        url = self._build_url(route, **kwargs)
+        url = self._build_url(route)
         self._init_client()
 
-        async with self.client.get(url, headers=headers) as resp:
+        async with self.client.get(url, headers=headers, params=kwargs) as resp:
             body = await resp.json(content_type='application/json')
             if not 'results' in body:
                 msg = 'expected key "results" not found in response body'
                 raise NoResultsException(msg)
 
             return body['results']
+
+
+    @retry_request(exceptions=(aiohttp.ClientError, asyncio.TimeoutError))
+    async def post(self, route, payload=None, **kwargs):
+        """ Invoke the actual http request
+        Args:
+            route - the path segment after /api, eg: '/dcim/devices'
+            kwargs - key,val pairs to be urlencoded as parameters.
+        Returns:
+            body['results']: the json blob representing the devices queried
+            from netbox.
+        Raises:
+            NoResultsException - the 'results' key is not present in the json
+            body. Which is a convention of netbox.
+
+        """
+        headers = {'Authorization': 'Token {}'.format(self.auth_token),
+                   'content-type': 'text/plain'}
+
+        url = self._build_url(route)
+        self._init_client()
+
+        async with self.client.post(url, headers=headers, params=kwargs,
+                                    payload=payload) as resp:
+            body = await resp.json(content_type='application/json')
+            return body
+
+
 
     async def close(self):
         """close the socket connection
