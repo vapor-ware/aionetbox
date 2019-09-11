@@ -36,17 +36,16 @@ Code Sample for a READ device scan:
 
 ```python
 import asyncio
+import json
 from aionetbox include AIONetbox
 
 async def run(token):
   nbox = AIONetbox(host='https://netbox.example.com', auth_token=token)
   devices = await nbox.get('/dcim/devices', role='some-role')
   await nbox.close()
-  return devices
+  print(json.dumps(devices, indent=2))
 
 if __name__ == '__main__':
     LOOP = asyncio.get_event_loop()
     LOOP.run_until_complete(run('my-netbox-token'))
 ```
-
-
