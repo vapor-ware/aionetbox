@@ -1,0 +1,22 @@
+pipeline {
+
+  agent any
+
+  stages {
+    // Clean up the workspace
+    stage('Clean') {
+      steps {
+        sh 'make clean'
+      }
+    }
+
+    // Lint the source code.
+    stage('Test') {
+      steps {
+        sh 'make test'
+      }
+    }
+
+  }
+}
+
