@@ -1,6 +1,6 @@
 pipeline {
   agent {
-	label 'python37'
+    label 'python37'
   }
   stages {
     // Clean up the workspace
@@ -18,6 +18,21 @@ pipeline {
         container('python37-agent'){
           sh 'make test'
         }
+      }
+    }
+
+    // Build and distribute a new package version to PyPi.
+    stage('Publish to PyPi') {
+      when {
+        buildingTag()
+      }
+      environment {
+        TWINE_USERNAME = 'vaporio'
+        TWINE_PASSWORD = credentials('twine-password')
+      }
+      steps {
+        // publish to pypi
+        sh 'tox -e publish'
       }
     }
 
