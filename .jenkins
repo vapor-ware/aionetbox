@@ -1,7 +1,7 @@
 pipeline {
-
-  agent any
-
+  agent {
+	label 'python37'
+  }
   stages {
     // Clean up the workspace
     stage('Clean') {
