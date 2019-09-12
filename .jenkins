@@ -6,14 +6,18 @@ pipeline {
     // Clean up the workspace
     stage('Clean') {
       steps {
-        sh 'make clean'
+        container('python37-agent'){
+          sh 'make clean'
+        }
       }
     }
 
     // Lint the source code.
     stage('Test') {
       steps {
-        sh 'make test'
+        container('python37-agent'){
+          sh 'make test'
+        }
       }
     }
 
