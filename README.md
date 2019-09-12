@@ -40,12 +40,17 @@ import json
 from aionetbox include AIONetbox
 
 async def run(token):
+  # Initialize with the host, and your authentication token
   nbox = AIONetbox(host='https://netbox.example.com', auth_token=token)
+  # Provide the api-route you wish to poll, and any key/value args
   devices = await nbox.get('/dcim/devices', role='some-role')
+  # be tidy and close your connection when complete
   await nbox.close()
   print(json.dumps(devices, indent=2))
 
+# this is setup so we have an event loop and can leverage asyncio
 if __name__ == '__main__':
     LOOP = asyncio.get_event_loop()
     LOOP.run_until_complete(run('my-netbox-token'))
 ```
+
