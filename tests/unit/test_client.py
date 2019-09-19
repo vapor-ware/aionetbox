@@ -56,7 +56,7 @@ class TestAIONetboxClient():
         resp = await tclient.get('dcim/foo', foo='bar')
         mclient.get.assert_called_with('localhost/api/dcim/foo',
                                        headers={'Authorization': 'Token mytoken',
-                                                'content-type': 'text/plain'},
+                                                'content-type': 'application/json'},
                                        params={'foo': 'bar'})
 
     @pytest.mark.asyncio
@@ -76,7 +76,7 @@ class TestAIONetboxClient():
         resp = await tclient.get('dcim/foo')
         mclient.get.assert_called_with('localhost/api/dcim/foo',
                                        headers={'Authorization': 'Token specifictoken',
-                                                'content-type': 'text/plain'},
+                                                'content-type': 'application/json'},
                                        params={})
 
     @pytest.mark.asyncio
@@ -110,7 +110,7 @@ class TestAIONetboxClient():
         resp = await tclient.post('/dcim/foo', payload={'update': 'data'})
         mclient.post.assert_called_with('localhost/api/dcim/foo',
                                         headers={'Authorization': 'Token mytoken',
-                                                'content-type': 'text/plain'},
+                                                'content-type': 'application/json'},
                                         params={},
                                         payload={'update': 'data'})
 

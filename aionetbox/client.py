@@ -67,7 +67,7 @@ class AIONetbox():
 
         """
         headers = {'Authorization': 'Token {}'.format(self.auth_token),
-                   'content-type': 'text/plain'}
+                   'content-type': 'application/json'}
 
         url = self._build_url(route)
         self._init_client()
@@ -92,7 +92,7 @@ class AIONetbox():
 
         """
         headers = {'Authorization': 'Token {}'.format(self.auth_token),
-                   'content-type': 'text/plain'}
+                   'content-type': 'application/json'}
 
         url = self._build_url(route)
         self._init_client()

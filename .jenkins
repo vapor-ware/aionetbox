@@ -1,26 +1,36 @@
-pipeline {
-  agent {
-    label 'python37'
-  }
-  stages {
-    // Clean up the workspace
-    stage('Clean') {
-      steps {
-        container('python37-agent'){
-          sh 'make clean'
-        }
-      }
-    }
+library identifier: 'vapor@master', retriever: modernSCM(
+    [$class: 'GitSCMSource',
+    remote: 'https://github.com/vapor-ware/ci-shared.git',
+    credentialsId: 'vio-bot-gh'])
 
-    // Lint the source code.
-    stage('Test') {
-      steps {
-        container('python37-agent'){
-          sh 'make test'
-        }
-      }
-    }
+toxPipeline{
+  name = 'aionetbox'
+  podTemplate = """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins/job: aionetbox
+spec:
+  containers:
+  - name: python
+    image: vaporio/jenkins-agent-python36:latest
+    command:
+    - cat
+    tty: true
+  nodeSelector:
+    cloud.google.com/gke-nodepool: jenkins
+  tolerations:
+  - key: role
+    operator: Equal
+    value: jenkins
+    effect: NoSchedule
+"""
 
+}
+
+
+/*
     // Build and distribute a new package version to PyPi.
     stage('Publish to PyPi') {
       when {
@@ -37,7 +47,5 @@ pipeline {
         }
       }
     }
-
-  }
-}
+*/
 
