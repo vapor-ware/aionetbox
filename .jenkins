@@ -3,8 +3,10 @@ library identifier: 'vapor@master', retriever: modernSCM(
     remote: 'https://github.com/vapor-ware/ci-shared.git',
     credentialsId: 'vio-bot-gh'])
 
+// declared in vapor-ware/ci-shared/vars/toxPipeline.groovy
 toxPipeline{
   name = 'aionetbox'
+  releaseToPypi: True
   podTemplate = """
 apiVersion: v1
 kind: Pod
@@ -26,26 +28,4 @@ spec:
     value: jenkins
     effect: NoSchedule
 """
-  releaseToPypi: False
 }
-
-
-/*
-    // Build and distribute a new package version to PyPi.
-    stage('Publish to PyPi') {
-      when {
-        buildingTag()
-      }
-      environment {
-        TWINE_USERNAME = 'vaporio'
-        TWINE_PASSWORD = credentials('twine-password')
-      }
-      steps {
-        container('python37-agent'){
-          // publish to pypi
-          sh 'tox -e publish'
-        }
-      }
-    }
-*/
-
