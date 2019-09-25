@@ -4,5 +4,23 @@
   "cypher": "CiQArcZm2GlWRXGgvkjlzZrVXC0jXDXLVA4+X4IuY5Dw9d6ciaUSYQClhb3L+aBIhKlbXjPWbYhPSNapMSKP6umAeJN06GQ24O3tA/1dA9iA4XGQ3FF23kVRymwBKchbLgW3/FQWU+8sPbQYNFIVWIzhgVg2ZM+cfufPObMZG6jIq9oEdbCtiE4=",
   "created": "2019-09-06T15:03:52.128388516-05:00",
   "encoding": "base64"
+ },
+ {
+  "name": "TWINE_USERNAME",
+  "cypher": "CiQArcZm2LotwnV3CRFrsGx/F9tnShiGhbNn+4SrurVAyznr3ZwSNQClhb3LvMc494yersJF7ZQR7F/zyfHEMOJYU4WXKkfBgLlm/N6F5+TTlUAjmKyd29Rvb1Ri",
+  "created": "2019-09-19T16:02:03.802267859-05:00",
+  "encoding": "base64"
+ },
+ {
+  "name": "TWINE_PASSWORD",
+  "cypher": "CiQArcZm2MRHkMCr1qg7CftfuR7jhEH3KyW9NQoFu7gIVQYrkl0SQQClhb3LvOcjyCEeE0QMzO8pW5W1mh8aulGHcFpcwzRJsp77fJdd7H64ltsLJdGHN6vt2hiDVkeL7ioJOhUP3i0i",
+  "created": "2019-09-19T16:09:05.20927853-05:00",
+  "encoding": "base64"
+ },
+ {
+  "name": "NETBOX_INTEGRATION_TOKEN",
+  "cypher": "CiQArcZm2HXIIKjVYu1vLf+7fQHGNlD/iypEUe3S1X2tejHB8ywSVQClhb3L9thohqdj1Fpyr6tzGUUDESazzjBiqDhAWJ2s2KeWFZbF+rsT4rl2CQLLeJAwKHtnKfz6xriD7EWm8yz4Gja6ljYkWLCVxaXA4BOkBBiTQ+8=",
+  "created": "2019-09-25T09:56:55.491197284-05:00",
+  "encoding": "base64"
  }
 ]
