@@ -1,30 +1,41 @@
+// Include this shared CI repository to load script helpers
+// and libraries.
 library identifier: 'vapor@master', retriever: modernSCM(
     [$class: 'GitSCMSource',
     remote: 'https://github.com/vapor-ware/ci-shared.git',
     credentialsId: 'vio-bot-gh'])
 
-// declared in vapor-ware/ci-shared/vars/toxPipeline.groovy
-toxPipeline{
-  releaseToPypi: True
-  podTemplate = """
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    jenkins/job: aionetbox
-spec:
-  containers:
-  - name: python
-    image: vaporio/jenkins-agent-python36:latest
-    command:
-    - cat
-    tty: true
-  nodeSelector:
-    cloud.google.com/gke-nodepool: jenkins
-  tolerations:
-  - key: role
-    operator: Equal
-    value: jenkins
-    effect: NoSchedule
-"""
+
+// Needed to pass env down into the operations that invoke tox.
+// Note: your tox targets will also need passenv configuration
+// to see these variables.
+withCredentials([string(credentialsId: 'netbox_integration_token',
+                 variable: 'NETBOX_INTEGRATION_TOKEN')]) {
+  // declared in vapor-ware/ci-shared/vars/toxPipeline.groovy
+  toxPipeline{
+    // When building tagged builds,
+    // attempt to release the output object to pypi
+    releaseToPypi: True
+    podTemplate = """
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    labels:
+      jenkins/job: aionetbox
+  spec:
+    containers:
+    - name: python
+      image: vaporio/jenkins-agent-python36:latest
+      command:
+      - cat
+      tty: true
+    nodeSelector:
+      cloud.google.com/gke-nodepool: jenkins
+    tolerations:
+    - key: role
+      operator: Equal
+      value: jenkins
+      effect: NoSchedule
+  """
+  }
 }
