@@ -1,0 +1,68 @@
+// Include this shared CI repository to load script helpers
+// and libraries.
+library identifier: 'vapor@swagger', retriever: modernSCM(
+    [$class: 'GitSCMSource',
+    remote: 'https://github.com/vapor-ware/ci-shared.git',
+    credentialsId: 'vio-bot-gh'])
+
+aioCodegenPipeline{
+    swagger_path = "http://127.0.0.1:8001/api/docs/?format=openapi"
+    package_name = "aionetbox"
+    cloud = ''
+    podTemplate = """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins/job: aionetbox
+spec:
+  volumes:
+  - name: code-gen-cache
+    emptyDir: {}
+  containers:
+  - name: swagger-codegen
+    image: swaggerapi/swagger-codegen-cli:2.4.8
+    command:
+      - cat
+    tty: true
+    volumeMounts:
+      - mountPath: /gen
+        name: code-gen-cache
+  - name: netbox
+    image: vaporio/netbox:develop
+    env:
+    - name: SECRET_KEY
+      value: 86556f19145f689d267-CI-CODED-e136ccfbfc7960ab0d705e9c0967ed8532373d
+    - name: SUPERUSER_API_TOKEN
+      value: 2307e5ae8b3d-CI-CODED-c67cc44105c36
+    - name: DB_NAME
+      value: postgres
+    - name: DB_USER
+      value: netbox
+    - name: DB_PASSWORD
+      value: netbox
+    readinessProbe:
+      httpGet:
+        path: /login/
+        port: 8001
+    initialDelaySeconds: 30
+    periodSeconds: 5
+  - name: postgres
+    image: postgres:10
+    env:
+    - name: POSTGRES_USER
+      value: netbox
+    - name: POSTGRES_PASSWORD
+      value: netbox
+  - name: redis
+    image: redis:latest
+  nodeSelector:
+    cloud.google.com/gke-nodepool: jenkins
+  tolerations:
+  - key: role
+    operator: Equal
+    value: jenkins
+    effect: NoSchedule
+"""
+}
+
