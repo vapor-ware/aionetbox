@@ -1,0 +1,99 @@
+swagger: "2.0"
+info:
+  title: Sample API
+  description: API description in Markdown.
+  version: 1.0.0
+host: api.example.com
+basePath: /v1
+schemes:
+  - https
+
+paths:
+  /users:
+    get:
+      summary: Return all users.
+      parameters:
+        - in: query
+          name: name
+          required: false
+          type: string
+          description: name to lookup
+      responses:
+        "200":
+          description: A User object.
+          schema:
+            type: object
+            required:
+            - count
+            - data
+            properties:
+              count:
+                type: integer
+              data:
+                type: array
+                items:
+                  $ref: "#/definitions/User"
+      tags:
+      - users
+      operationId: users_list
+  /users/{userId}:
+    get:
+      summary: Returns a user by ID.
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: integer
+          minimum: 1
+          description: The ID of the user to return.
+      responses:
+        "200":
+          description: A User object.
+          schema:
+            $ref: "#/definitions/User"
+        "400":
+          description: The specified user ID is invalid (e.g. not a number).
+        "404":
+          description: A user with the specified ID was not found.
+        default:
+          description: Unexpected error
+      tags:
+      - users
+      operationId: users_read
+definitions:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 4
+      name:
+        type: string
+        example: Arthur Dent
+      address:
+        type: object
+        properties:
+          number:
+            type: integer
+          street:
+            type: string
+      cars:
+        type: array
+        items:
+          $ref: "#/definitions/Car"
+  Car:
+    type: object
+    required:
+    - make
+    - model
+    properties:
+      make:
+        type: string
+      model:
+        type: string
+      year:
+        type: integer
+      problems:
+        type: array
+        items:
+          type: string
