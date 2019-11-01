@@ -2,6 +2,14 @@
 
 An asyncio netbox library that conforms to any running netbox via it's OpenAPI spec
 
+## Installation
+
+AIONetbox is distributed as a library intended to be included in other asyncio python projects. It has been developed on python 3.6+ though 3.8 is recommended.
+
+```
+pip install aionetbox
+```
+
 ## Usage
 
 ```
