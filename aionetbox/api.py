@@ -4,7 +4,8 @@ import json
 import asyncio
 import logging
 import collections
-from urllib.parse import urlencode
+
+from typing import Iterable
 
 import aiohttp
 from prance import ResolvingParser
@@ -13,13 +14,14 @@ from aionetbox.exceptions import (
     BadRequest,
     MissingRequiredParam,
     InvalidResponse,
+    InvalidRequest,
 )
 
 log = logging.getLogger(__name__)
 
 
 class AIONetbox():
-    _http_methods = ['get', 'post', 'put', 'patch', 'delete']
+    _http_methods = ('GET', 'HEAD', 'DELETE', 'POST', 'PUT', 'PATCH', 'OPTIONS')
     _api_cache = {}
 
     @classmethod
@@ -47,9 +49,9 @@ class AIONetbox():
         self.tags = self.config.keys()
         self.loop = loop or asyncio.get_event_loop()
 
-    async def request(self, method, url, query_params=None, headers=None, body=None, post_params=None, _timeout=None):
+    async def request(self, method, url, query_params=None, headers=None, body=None, post_params=None, timeout=None):
         method = method.upper()
-        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT', 'PATCH', 'OPTIONS']
+        assert method in self._http_methods
 
         if post_params and body:
             raise ValueError(
@@ -59,9 +61,9 @@ class AIONetbox():
         post_params = post_params or {}
         headers = headers or {}
         headers.update({
-            'Authorization': 'Token {}'.format(self.api_key)
+            'Authorization': f'Token {self.api_key}',
         })
-        timeout = _timeout or 5 * 60
+        timeout = timeout or 5 * 60
 
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'
@@ -70,11 +72,9 @@ class AIONetbox():
             'method': method,
             'url': url,
             'timeout': timeout,
+            'params': query_params,
             'headers': headers
         }
-
-        if query_params:
-            args['url'] += '?' + urlencode(query_params)
 
         if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
             if re.search('json', headers['Content-Type'], re.IGNORECASE):
@@ -91,9 +91,10 @@ class AIONetbox():
                 args['data'] = body
             else:
                 # Cannot generate the request from given parameters
-                msg = '''Cannot prepare a request message for provided arguments. Please check that your
-                         arguments match declared content type.'''
-                raise Exception(msg)
+                raise InvalidRequest(
+                    'Cannot prepare a request message for provided arguments. Please check that your arguments match '
+                    'declared content type.'
+                )
 
         return await self.session.request(**args)
 
@@ -108,12 +109,17 @@ class AIONetbox():
 
         operations['_orig'] = config
         for path, data in config.get('paths', {}).items():
-            for action in self._http_methods:
+            for method in self._http_methods:
+                action = method.lower()
                 if action not in data:
                     continue
 
                 payload = data.get(action, {})
                 tags = payload.get('tags', [])
+
+                operationId = payload.get('operationId')
+                if not operationId:
+                    continue
 
                 for tag in tags:
                     if tag not in operations:
@@ -125,14 +131,14 @@ class AIONetbox():
                         'method': action,
                     }
 
-                    operations[tag][payload.get('operationId')] = payload
-                    operations[tag][payload.get('operationId')]['rest'] = rest_cfg
+                    operations[tag][operationId] = payload
+                    operations[tag][operationId]['rest'] = rest_cfg
 
         return operations
 
     def __getattr__(self, tag):
         if tag not in self.tags:
-            raise AttributeError("'{}' object has no attribute '{}'".format(__name__, tag))
+            raise AttributeError("'{}' object has no attribute '{}'".format(self.__class__.__name__, tag))
 
         if tag in self._api_cache:
             return self._api_cache.get(tag)
@@ -161,7 +167,7 @@ class NetboxApi():
 
     def __getattr__(self, operation):
         if operation not in self.operations:
-            raise AttributeError("'{}' object has no attribute '{}'".format(__name__, operation))
+            raise AttributeError("'{}' object has no attribute '{}'".format(self, operation))
 
         if operation in self._operation_cache:
             return self._operation_cache.get(operation)
@@ -210,7 +216,7 @@ class NetboxApiOperation():
         data = await resp.json()
         return NetboxResponseObject.from_response(
             data=data,
-            **self.config.get('responses', {}).get(str(resp.status), {}).get('schema')
+            **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})
         )
 
     def build_url(self, url):
@@ -288,11 +294,8 @@ class NetboxResponseObject():
                     value = cls.from_response(data=val, **spec)
             elif ctype == 'array':
                 # If we have an array of objects, make sure the value is iterable, then produce a list of objects
-                try:
-                    iter(val)
+                if isinstance(val, Iterable):
                     value = [cls.from_response(data=v, **spec.get('items')) for v in val]
-                except TypeError:
-                    pass
 
             setattr(output, key, value)
 

@@ -17,12 +17,11 @@ from aionetbox.api import (
     ResolvingParser,
 )
 
-from prance import BaseParser
-
 from aionetbox.exceptions import (
     InvalidResponse,
     MissingRequiredParam,
     BadRequest,
+    InvalidRequest,
 )
 
 here = Path(__file__).parent
@@ -194,7 +193,7 @@ async def test_NetboxApiOperation_request(mnbro):
     op.parse_params = MagicMock(return_value=({}, {}, {}))
     op.build_url = MagicMock()
 
-    nbresp = await op.request(userId=42)
+    await op.request(userId=42)
 
     mnbro.from_response.assert_called_with(data={}, **response_schema)
 
@@ -211,7 +210,7 @@ async def test_NetboxApiOperation_request_cf(mnbro):
     op.parse_params = MagicMock(return_value=({}, {}, {'name': 'test'}))
     op.build_url = MagicMock(return_value='http://test/users')
 
-    nbresp = await op.request(name='test', cf_hello='world', extra='ignore')
+    await op.request(name='test', cf_hello='world', extra='ignore')
 
     nb.request.assert_called_with(
         method='get',
@@ -251,7 +250,7 @@ def test_NetboxApi_attr(mnbaop):
 @patch('aionetbox.api.ResolvingParser')
 def test_AIONetbox_from_openapi(mrp):
     with patch.object(AIONetbox, 'parse_spec') as mps:
-        a = AIONetbox.from_openapi('http://testurl', 'ab12cd34')
+        AIONetbox.from_openapi('http://testurl', 'ab12cd34')
         mrp.assert_called_with('http://testurl/api/swagger.json')
         mps.assert_called_with(mrp.return_value)
 
@@ -270,26 +269,43 @@ def test_AIONetbox_parse_spec():
     assert {} == a.parse_spec({})
     assert '_orig' in a.parse_spec(spec)
     assert 'users' in a.parse_spec(spec)
+    assert 'fake' not in a.parse_spec(spec)
     assert 'users_list' in a.parse_spec(spec).get('users')
 
 
 @pytest.mark.asyncio
-async def test_AIONetbox_request():
+async def test_AIONetbox_request_bad_params():
     s = SessionMock()
     a = AIONetbox('http://localhost', '1122', session=s)
 
     with pytest.raises(ValueError):
         await a.request('get', 'http://foobar', post_params={'hello': 'world'}, body={'wrong': True})
 
-    with pytest.raises(Exception):
+    s.request.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_AIONetbox_request_invalid_content_type():
+    s = SessionMock()
+    a = AIONetbox('http://localhost', '1122', session=s)
+
+    with pytest.raises(InvalidRequest):
         await a.request('put', 'http://foobar', headers={'Content-Type': 'broken'})
 
+    s.request.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_AIONetbox_request():
+    s = SessionMock()
+    a = AIONetbox('http://localhost', '1122', session=s)
     await a.request('post', 'http://foobar', query_params={'test': 'testing'}, body={'new_phone': 'whodis'})
 
     s.request.assert_called_with(
         method='POST',
-        url='http://foobar?test=testing',
+        url='http://foobar',
         timeout=300,
+        params={'test': 'testing'},
         headers={
             'Content-Type': 'application/json',
             'Authorization': 'Token 1122',
@@ -317,6 +333,7 @@ async def test_AIONetbox_request_form(maiofd):
         method='POST',
         url='http://foobar',
         timeout=300,
+        params=None,
         headers={
             'Content-Type': 'application/x-www-form-urlencoded',
             'Authorization': 'Token 1122',
@@ -342,6 +359,7 @@ async def test_AIONetbox_request_bytes():
         method='POST',
         url='http://foobar',
         timeout=300,
+        params=None,
         headers={
             'Content-Type': 'application/yaml',
             'Authorization': 'Token 1122',

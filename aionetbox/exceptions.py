@@ -13,3 +13,7 @@ class BadRequest(AIONetboxException):
 
 class InvalidResponse(AIONetboxException):
     pass
+
+
+class InvalidRequest(AIONetboxException):
+    pass
