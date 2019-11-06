@@ -28,6 +28,7 @@ setup(
     name=pkg['__title__'],
     version=pkg['__version__'],
     description=pkg['__description__'],
+    license=pkg['__license__'],
     long_description=readme,
     long_description_content_type='text/markdown',
     url=pkg['__url__'],
@@ -44,6 +45,11 @@ setup(
     install_requires=[
         'aiohttp[speedups]',
         'prance[osv,icu]',
+    ],
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: OS Independent',
     ],
     zip_safe=False,
 )
