@@ -21,11 +21,28 @@ log = logging.getLogger(__name__)
 
 
 class AIONetbox():
+    """asyncio Netbox Client
+
+    Args:
+        host: Base URL of Netbox instance
+        api_key: The API Token from Netbox to access Netbox API
+        spec: Dictionary or ResolvingParser of OpenAPI/Swagger spec
+        session: ClientSession for http requests
+        loop: Optional asyncio loop
+    """
+
     _http_methods = ('GET', 'HEAD', 'DELETE', 'POST', 'PUT', 'PATCH', 'OPTIONS')
     _api_cache = {}
 
     @classmethod
     def from_openapi(cls, url, api_key, session=None):
+        """Create an AIONetbox using a remote OpenAPI/Swagger Specification.
+
+        Args:
+            url: Base URL with protocol to load swagger spec.
+            api_key: The API Token from Netbox to access Netbox API
+            session: ClientSession for http requests
+        """
         data = ResolvingParser('{}/api/swagger.json'.format(url))
 
         aionb = cls(url, api_key, spec=data, session=session)
@@ -34,6 +51,13 @@ class AIONetbox():
 
     @classmethod
     def from_spec(cls, spec, api_key, session=None):
+        """Create an AIONetbox using an OpenAPI/Swagger Specification from disk.
+
+        Args:
+            spec: String or full path on disk of OpenAPI/Swagger spec
+            api_key: The API Token from Netbox to access Netbox API
+            session: ClientSession for http requests
+        """
         data = ResolvingParser(spec)
 
         url = '{}://{}'.format(data.specification.get('schemes', ['http'])[0], data.specification.get('host'))
@@ -50,6 +74,17 @@ class AIONetbox():
         self.loop = loop or asyncio.get_event_loop()
 
     async def request(self, method, url, query_params=None, headers=None, body=None, post_params=None, timeout=None):
+        """Execute a web request
+
+        Args:
+            method: HTTP verb for request
+            url: Full URL of resource for request
+            query_params: Query paramemters to be added at the end of url
+            headers: Additional headers for request
+            body: Request body
+            post_params: http form parameters
+            timeout: request timeout in seconds
+        """
         method = method.upper()
         assert method in self._http_methods
 
@@ -99,6 +134,8 @@ class AIONetbox():
         return await self.session.request(**args)
 
     def parse_spec(self, config):
+        """Parse OpenAPI/Swagger spec"""
+
         operations = {}
 
         if not config:
@@ -137,6 +174,11 @@ class AIONetbox():
         return operations
 
     def __getattr__(self, tag):
+        """NetboxApi Lookup
+
+        Used when accessing a certain tag of the netbox api. The result of this method depends on what tags
+        are defined in the OpenAPI/Swagger spec.
+        """
         if tag not in self.tags:
             raise AttributeError("'{}' object has no attribute '{}'".format(self.__class__.__name__, tag))
 
@@ -149,6 +191,7 @@ class AIONetbox():
         return c
 
     async def close(self):
+        """Close all open connections"""
         await self.session.close()
 
     def __del__(self):
@@ -156,7 +199,13 @@ class AIONetbox():
 
 
 class NetboxApi():
+    """Netbox API group endpoint
 
+    Args:
+        tag: Netbox API Group name
+        operations: one or more operations
+        client: AIONetbox instance
+    """
     def __init__(self, tag, operations, client):
         self.name = tag
         self.config = operations
@@ -166,6 +215,10 @@ class NetboxApi():
         self._operation_cache = {}
 
     def __getattr__(self, operation):
+        """NetboxApiOperation lookup
+
+        Used to load an operationId from configuration of the API group
+        """
         if operation not in self.operations:
             raise AttributeError("'{}' object has no attribute '{}'".format(self, operation))
 
@@ -182,7 +235,14 @@ class NetboxApi():
 
 
 class NetboxApiOperation():
+    """Netbox API group operation
 
+    Args:
+        tag: Netbox API Group name
+        operation: operation name
+        config: Operation configuration
+        client: AIONetbox instance
+    """
     def __init__(self, tag, operation, config, client):
         self.client = client
         self.config = config
@@ -191,7 +251,7 @@ class NetboxApiOperation():
         self.tag = tag
 
     async def request(self, **kwargs):
-
+        """Execute a web request"""
         path, body, query = self.parse_params(kwargs)
 
         if self.operation_method == 'list':
@@ -220,9 +280,11 @@ class NetboxApiOperation():
         )
 
     def build_url(self, url):
+        """Construct a URL from spec"""
         return '{}{}{}'.format(self.client.host, self.client.config.get('_orig', {}).get('basePath'), url)
 
     def parse_params(self, params):
+        """Build request parameters and validate based on spec"""
         qb = {
             'body': {},
             'query': {},
@@ -249,6 +311,10 @@ class NetboxApiOperation():
         return self.operation.split('_')[-1]
 
     async def __call__(self, **kwargs):
+        """ Execute given operation request
+
+        When a user executes an instance of NetboxApiOperation those arguments will passed through to ``request``
+        """
         try:
             return await self.request(**kwargs)
         except MissingRequiredParam as e:
@@ -261,6 +327,10 @@ class NetboxApiOperation():
 
 
 class NetboxResponseObject():
+    """Netbox Response
+
+    Take the output from an ``AIONetbox.request`` and formats / validates it based on a passed spec
+    """
 
     @classmethod
     def from_response(cls, data, **kwargs):
