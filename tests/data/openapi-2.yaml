@@ -9,6 +9,21 @@ schemes:
   - https
 
 paths:
+  /fake:
+    get:
+      summary: Fake request
+      responses:
+        "200":
+          description: A User object.
+          schema:
+            type: object
+            required:
+            - fake
+            properties:
+              fake:
+                type: boolean
+      tags:
+      - fake
   /users:
     get:
       summary: Return all users.

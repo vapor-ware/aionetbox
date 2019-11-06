@@ -1,6 +1,7 @@
 import asynctest
 from unittest.mock import MagicMock
 
+
 class ResponseMock():
 
     json = asynctest.CoroutineMock(return_value={})
