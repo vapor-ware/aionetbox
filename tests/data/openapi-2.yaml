@@ -51,6 +51,19 @@ paths:
       tags:
       - users
       operationId: users_list
+    post:
+      summary: Create a user
+      parameters:
+      - in: body
+        name: data
+        schema:
+          $ref: "#/definitions/User"
+      responses:
+        "200":
+          description: "OK"
+      tags:
+      - users
+      operationId: users_create
   /users/{userId}:
     get:
       summary: Returns a user by ID.

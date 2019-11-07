@@ -299,7 +299,11 @@ class NetboxApiOperation():
             if sp['name'] not in params:
                 continue
 
-            qb[sp['in']][sp['name']] = params.get(sp['name'])
+            if sp['in'] == 'body':
+                # BODY params are special in that the name is not passed through
+                qb[sp['in']] = params.get(sp['name'])
+            else:
+                qb[sp['in']][sp['name']] = params.get(sp['name'])
 
         return (qb.get('path'), qb.get('body'), qb.get('query'))
 

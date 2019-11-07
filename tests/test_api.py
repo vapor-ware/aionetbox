@@ -150,6 +150,17 @@ def test_NetboxApiOperation_parse_params():
         op.parse_params({})
 
 
+def test_NetboxApiOperation_parse_params_body():
+    spec = ResolvingParser(str(here / 'data' / 'openapi-2.yaml'))
+    nb = AIONetbox(host='http://localhost', api_key='11', spec=spec, session=SessionMock())
+    op = NetboxApiOperation('users', 'users_create', nb.config['users']['users_create'], nb)
+
+    params = {'data': {'foobar': 'bar', 'baz': True}}
+    parsed = op.parse_params(params)
+
+    assert ({}, {'foobar': 'bar', 'baz': True}, {}) == parsed
+
+
 def test_NetboxApiOperation_operation_method():
     op = NetboxApiOperation('users', 'users_read', {}, {})
     assert 'read' == op.operation_method
