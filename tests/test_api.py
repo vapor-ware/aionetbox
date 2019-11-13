@@ -258,7 +258,7 @@ def test_NetboxApi_attr(mnbaop):
         api.fake_method
 
 
-@patch('aionetbox.api.ResolvingParser')
+@patch('aionetbox.api.NetboxSpec')
 def test_AIONetbox_from_openapi(mrp):
     with patch.object(AIONetbox, 'parse_spec') as mps:
         AIONetbox.from_openapi('http://testurl', 'ab12cd34')

@@ -5,6 +5,8 @@ import asyncio
 import logging
 import collections
 
+from aionetbox.utils import singleton
+
 from typing import Iterable
 
 import aiohttp
@@ -18,6 +20,11 @@ from aionetbox.exceptions import (
 )
 
 log = logging.getLogger(__name__)
+
+
+@singleton
+class NetboxSpec(ResolvingParser):
+    pass
 
 
 class AIONetbox():
@@ -43,9 +50,9 @@ class AIONetbox():
             api_key: The API Token from Netbox to access Netbox API
             session: ClientSession for http requests
         """
-        data = ResolvingParser('{}/api/swagger.json'.format(url))
+        spec = NetboxSpec('{}/api/swagger.json'.format(url))
 
-        aionb = cls(url, api_key, spec=data, session=session)
+        aionb = cls(url, api_key, spec=spec, session=session)
 
         return aionb
 
@@ -58,7 +65,7 @@ class AIONetbox():
             api_key: The API Token from Netbox to access Netbox API
             session: ClientSession for http requests
         """
-        data = ResolvingParser(spec)
+        data = NetboxSpec(spec)
 
         url = '{}://{}'.format(data.specification.get('schemes', ['http'])[0], data.specification.get('host'))
         aionb = cls(url, api_key, spec=data, session=session)
