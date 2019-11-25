@@ -44,8 +44,13 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'aiohttp[speedups]',
-        'prance[osv,icu]',
+        'prance[osv]',
     ],
+    extra_require={
+        'icu': [
+            'prance[osv,icu]',
+        ]
+    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
