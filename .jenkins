@@ -6,16 +6,10 @@ library identifier: 'vapor@master', retriever: modernSCM(
     credentialsId: 'vio-bot-gh'])
 
 // declared in vapor-ware/ci-shared/vars/toxPipeline.groovy
-toxPipeline{
-  // When building tagged builds,
-  // attempt to release the output object to pypi
-  //
-  // Cool Note: The readinessProbe on netbox will delay CI pipeline execution
-  // until the pod has completed convergence and reports 5/5 containers
-  // ready. Ensuring we dont execute until we're positive we have an http
-  // endpoint to respond to the test suite.
-  releaseToPypi: True
-  podTemplate = """
+toxPipeline([
+  "releaseToPypi": true,
+  "twineCredential": "pypi-token-aionetbox-upload",
+  "podTemplate": """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -36,4 +30,4 @@ spec:
     value: jenkins
     effect: NoSchedule
 """
-}
+])
