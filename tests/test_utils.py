@@ -1,5 +1,3 @@
-import pytest
-
 from aionetbox.utils import singleton
 
 
