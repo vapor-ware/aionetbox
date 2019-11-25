@@ -46,7 +46,7 @@ setup(
         'aiohttp[speedups]',
         'prance[osv]',
     ],
-    extra_require={
+    extras_require={
         'icu': [
             'prance[osv,icu]',
         ]
