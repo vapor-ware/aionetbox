@@ -1,2 +1,2 @@
 aiohttp[speedups]==3.6.2
-prance[osv,icu]==0.16.1
+prance[osv]==0.16.1
