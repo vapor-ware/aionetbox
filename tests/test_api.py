@@ -217,6 +217,8 @@ async def test_NetboxApiOperation_request_cf(mnbro):
     nb.request = asynctest.CoroutineMock(return_value=ResponseMock())
     op = NetboxApiOperation('users', 'users_list', nb.config['users']['users_list'], nb)
 
+    mnbro.from_response.return_value.next = None
+
     response_schema = spec.specification['paths']['/users']['get']['responses']['200']['schema']
     op.parse_params = MagicMock(return_value=({}, {}, {'name': 'test'}))
     op.build_url = MagicMock(return_value='http://test/users')
@@ -231,6 +233,44 @@ async def test_NetboxApiOperation_request_cf(mnbro):
     )
 
     mnbro.from_response.assert_called_with(data={}, **response_schema)
+
+
+@pytest.mark.asyncio
+@patch('aionetbox.api.NetboxResponseObject')
+async def test_NetboxApiOperation_request_pagination(mnbro):
+    spec = ResolvingParser(str(here / 'data' / 'openapi-2.yaml'))
+    nb = AIONetbox(host='http://localhost', api_key='11', spec=spec, session=SessionMock())
+    nb.request = asynctest.CoroutineMock(return_value=ResponseMock())
+    op = NetboxApiOperation('users', 'users_list', nb.config['users']['users_list'], nb)
+
+    page0 = MagicMock()
+    page1 = MagicMock()
+
+    page0.next = 'http://testing/test?limit=50&offset=50'
+    page0.results = ['1', '2', '3']
+    page1.next = None
+    page1.results = ['one', 'two', 'three']
+
+    mnbro.from_response.side_effect = [page0, page1]
+
+    op.parse_params = MagicMock(return_value=({}, {}, {'name': 'test'}))
+    op.build_url = MagicMock(return_value='http://test/users')
+
+    results = await op.request(name='test')
+
+    nb.request.assert_any_call(
+        method='get',
+        url='http://test/users',
+        query_params={'name': 'test'},
+        body={}
+    )
+
+    nb.request.assert_any_call(
+        method='get',
+        url='http://testing/test?limit=50&offset=50'
+    )
+
+    assert ['1', '2', '3', 'one', 'two', 'three'] == results.results
 
 
 def test_NetboxApi():

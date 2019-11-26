@@ -281,10 +281,31 @@ class NetboxApiOperation():
 
         resp.raise_for_status()
         data = await resp.json()
-        return NetboxResponseObject.from_response(
+        output = NetboxResponseObject.from_response(
             data=data,
             **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})
         )
+
+        if self.operation_method != 'list':
+            return output
+
+        while output.next:
+            resp = await self.client.request(
+                method=self.rest_config.get('method'),
+                url=output.next
+            )
+
+            resp.raise_for_status()
+            data = await resp.json()
+            pagination_output = NetboxResponseObject.from_response(
+                data=data,
+                **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})
+            )
+
+            output.results.extend(pagination_output.results)
+            output.next = pagination_output.next
+
+        return output
 
     def build_url(self, url):
         """Construct a URL from spec"""
