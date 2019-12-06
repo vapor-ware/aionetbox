@@ -403,5 +403,20 @@ class NetboxResponseObject:
 
         return output
 
+    def __iter__(self):
+        iters = {}
+        iters.update(self.__dict__)
+
+        for k, val in iters.items():
+            yield k, val
+
+    def __getitem__(self, key):
+        if key in self.__dict__:
+            return self.__dict__[key]
+        raise KeyError(key)
+
+    def __len__(self):
+        return len(self.__dict__)
+
     def __repr__(self):
-        return '{}'.format(self.__dict__)
+        return repr(self.__dict__)

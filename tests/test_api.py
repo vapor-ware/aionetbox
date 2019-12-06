@@ -67,6 +67,14 @@ def test_NetboxResponseObject_from_response():
 
     assert n.id == 1
     assert n.cars[0].model == 'BGT'
+    assert n['cars'][0]['model'] == 'BGT'
+    assert len(n) == 4
+
+    with pytest.raises(KeyError):
+        n['notvalid']
+
+    for k, val in n:
+        assert n[k] == val
 
 
 def test_NetboxResponseObject_repr():
