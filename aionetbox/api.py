@@ -27,7 +27,7 @@ class NetboxSpec(ResolvingParser):
     pass
 
 
-class AIONetbox():
+class AIONetbox:
     """asyncio Netbox Client
 
     Args:
@@ -205,7 +205,7 @@ class AIONetbox():
         asyncio.ensure_future(self.session.close())
 
 
-class NetboxApi():
+class NetboxApi:
     """Netbox API group endpoint
 
     Args:
@@ -241,7 +241,7 @@ class NetboxApi():
         return 'Netbox.{}'.format(self.name)
 
 
-class NetboxApiOperation():
+class NetboxApiOperation:
     """Netbox API group operation
 
     Args:
@@ -358,7 +358,7 @@ class NetboxApiOperation():
         return 'Netbox.{}.{}'.format(self.tag, self.operation)
 
 
-class NetboxResponseObject():
+class NetboxResponseObject:
     """Netbox Response
 
     Take the output from an ``AIONetbox.request`` and formats / validates it based on a passed spec
