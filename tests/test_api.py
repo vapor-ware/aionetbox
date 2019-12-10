@@ -67,14 +67,6 @@ def test_NetboxResponseObject_from_response():
 
     assert n.id == 1
     assert n.cars[0].model == 'BGT'
-    assert n['cars'][0]['model'] == 'BGT'
-    assert len(n) == 4
-
-    with pytest.raises(KeyError):
-        n['notvalid']
-
-    for k, val in n:
-        assert n[k] == val
 
 
 def test_NetboxResponseObject_repr():
@@ -84,6 +76,22 @@ def test_NetboxResponseObject_repr():
     data = {
         'id': 1,
         'name': 'Marco Ceppi',
+        'cars': [
+            {
+                'make': 'MG',
+                'model': 'BGT',
+                'year': 1974,
+                'problems': []
+            },
+            {
+                'make': 'Triumph',
+                'model': 'TR6',
+                'year': 1974,
+                'problems': [
+                    'oil leak'
+                ]
+            }
+        ],
         'address': {
             'number': 123,
             'street': 'Main St',

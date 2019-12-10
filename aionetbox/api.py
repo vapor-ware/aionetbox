@@ -403,20 +403,21 @@ class NetboxResponseObject:
 
         return output
 
-    def __iter__(self):
-        iters = {}
-        iters.update(self.__dict__)
+    def dict(self):
+        return self._obj(self.__dict__)
 
-        for k, val in iters.items():
-            yield k, val
+    @staticmethod
+    def _obj(obj):
+        if isinstance(obj, NetboxResponseObject):
+            return obj.dict()
 
-    def __getitem__(self, key):
-        if key in self.__dict__:
-            return self.__dict__[key]
-        raise KeyError(key)
+        if isinstance(obj, collections.Mapping):
+            return {k: NetboxResponseObject._obj(v) for k, v in obj.items()}
 
-    def __len__(self):
-        return len(self.__dict__)
+        if isinstance(obj, list):
+            return [NetboxResponseObject._obj(e) for e in obj]
+
+        return obj
 
     def __repr__(self):
-        return repr(self.__dict__)
+        return repr(self.dict())
