@@ -216,7 +216,7 @@ class NetboxApi:
     def __init__(self, tag, operations, client):
         self.name = tag
         self.config = operations
-        self.operations = operations.keys()
+        self.operations = {k.replace('-', '_'): k for k in operations.keys()}
         self.client = client
 
         self._operation_cache = {}
@@ -226,14 +226,16 @@ class NetboxApi:
 
         Used to load an operationId from configuration of the API group
         """
-        if operation not in self.operations:
+        op = self.operations.get(operation, False)
+
+        if not op:
             raise AttributeError("'{}' object has no attribute '{}'".format(self, operation))
 
-        if operation in self._operation_cache:
-            return self._operation_cache.get(operation)
+        if op in self._operation_cache:
+            return self._operation_cache.get(op)
 
-        m = NetboxApiOperation(self.name, operation, self.config.get(operation), self.client)
-        self._operation_cache[operation] = m
+        m = NetboxApiOperation(self.name, op, self.config.get(op), self.client)
+        self._operation_cache[op] = m
 
         return m
 
