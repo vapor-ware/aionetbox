@@ -43,7 +43,7 @@ setup(
     },
     python_requires='>=3.6',
     install_requires=[
-        'aiohttp[speedups]',
+        'aiohttp[speedups]<4.0',
         'prance[osv]',
     ],
     extras_require={
