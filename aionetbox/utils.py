@@ -29,6 +29,7 @@ def singleton(cls):
         >>>
     """
     previous_instances = {}
+
     @functools.wraps(cls)
     def wrapper(*args, **kwargs):
         if cls in previous_instances and previous_instances.get(cls, None).get('args') == (args, kwargs):
