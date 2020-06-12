@@ -42,7 +42,7 @@ class AIONetbox:
     _api_cache = {}
 
     @classmethod
-    def from_openapi(cls, url, api_key, session=None):
+    def from_openapi(cls, url, api_key, private_key=None, session=None):
         """Create an AIONetbox using a remote OpenAPI/Swagger Specification.
 
         Args:
@@ -52,12 +52,12 @@ class AIONetbox:
         """
         spec = NetboxSpec('{}/api/swagger.json'.format(url))
 
-        aionb = cls(url, api_key, spec=spec, session=session)
+        aionb = cls(url, api_key, private_key=private_key, spec=spec, session=session)
 
         return aionb
 
     @classmethod
-    def from_spec(cls, spec, api_key, session=None):
+    def from_spec(cls, spec, api_key, private_key=None, session=None):
         """Create an AIONetbox using an OpenAPI/Swagger Specification from disk.
 
         Args:
@@ -68,17 +68,36 @@ class AIONetbox:
         data = NetboxSpec(spec)
 
         url = '{}://{}'.format(data.specification.get('schemes', ['http'])[0], data.specification.get('host'))
-        aionb = cls(url, api_key, spec=data, session=session)
+        aionb = cls(url, api_key, private_key=private_key, spec=data, session=session)
 
         return aionb
 
-    def __init__(self, host, api_key, spec=None, session=None, loop=None):
+    def __init__(self, host, api_key, private_key=None, spec=None, session=None, loop=None):
         self.host = host
         self.api_key = api_key
         self.session = session or aiohttp.ClientSession()
         self.config = self.parse_spec(spec)
+        self.private_key = private_key
+        self.session_key = None
         self.tags = self.config.keys()
         self.loop = loop or asyncio.get_event_loop()
+
+    async def get_session_key(self, private_key):
+        url = '{}{}{}'.format(self.host, self.config.get('_orig', {}).get('basePath'), '/secrets/get-session-key/')
+        resp = await self.request(
+            url=url,
+            method='post',
+            query_params={'preserve_key': 'true'},
+            post_params={'private_key': private_key},
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
+        )
+
+        try:
+            data = await resp.json()
+        except:
+            data = {}
+
+        return data.get('session_key')
 
     async def request(self, method, url, query_params=None, headers=None, body=None, post_params=None, timeout=None):
         """Execute a web request
@@ -109,6 +128,9 @@ class AIONetbox:
 
         if 'Content-Type' not in headers:
             headers['Content-Type'] = 'application/json'
+
+        if self.session_key:
+            headers['X-Session-Key'] = self.session_key
 
         args = {
             'method': method,
@@ -261,6 +283,10 @@ class NetboxApiOperation:
 
     async def request(self, **kwargs):
         """Execute a web request"""
+
+        if self.client.private_key and not self.client.session_key:
+            self.client.session_key = await self.client.get_session_key(self.client.private_key)
+
         path, body, query = self.parse_params(kwargs)
 
         if self.operation_method == 'list':
