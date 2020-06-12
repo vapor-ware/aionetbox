@@ -94,7 +94,7 @@ class AIONetbox:
 
         try:
             data = await resp.json()
-        except:
+        except Exception:
             data = {}
 
         return data.get('session_key')
