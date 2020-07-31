@@ -8,6 +8,7 @@ import collections
 from aionetbox.utils import singleton
 
 from typing import Iterable
+from urllib.parse import urlparse, parse_qsl
 
 import aiohttp
 from prance import ResolvingParser
@@ -281,6 +282,23 @@ class NetboxApiOperation:
         self.operation = operation
         self.tag = tag
 
+    async def _request(self, path, query, body):
+        url = self.build_url(self.rest_config.get('url')).format(**path)
+
+        resp = await self.client.request(
+            method=self.rest_config.get('method'),
+            url=url,
+            query_params=query,
+            body=body
+        )
+
+        resp.raise_for_status()
+        data = await resp.json()
+        return NetboxResponseObject.from_response(
+            data=data,
+            **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})
+        )
+
     async def request(self, **kwargs):
         """Execute a web request"""
 
@@ -298,37 +316,14 @@ class NetboxApiOperation:
                 if kw.startswith('cf_'):
                     query[kw] = kwargs.get(kw)
 
-        url = self.build_url(self.rest_config.get('url')).format(**path)
-
-        resp = await self.client.request(
-            method=self.rest_config.get('method'),
-            url=url,
-            query_params=query,
-            body=body
-        )
-
-        resp.raise_for_status()
-        data = await resp.json()
-        output = NetboxResponseObject.from_response(
-            data=data,
-            **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})
-        )
+        output = await self._request(path, query, body)
 
         if self.operation_method != 'list':
             return output
 
         while output.next:
-            resp = await self.client.request(
-                method=self.rest_config.get('method'),
-                url=output.next
-            )
-
-            resp.raise_for_status()
-            data = await resp.json()
-            pagination_output = NetboxResponseObject.from_response(
-                data=data,
-                **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})
-            )
+            u = urlparse(output.next)
+            pagination_output = await self._request(path, {**query, **dict(parse_qsl(u.query))}, body)
 
             output.results.extend(pagination_output.results)
             output.next = pagination_output.next

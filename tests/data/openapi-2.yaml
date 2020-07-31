@@ -33,6 +33,16 @@ paths:
           required: false
           type: string
           description: name to lookup
+        - in: query
+          name: limit
+          required: false
+          type: integer
+          description: maximum records
+        - in: query
+          name: offset
+          required: false
+          type: integer
+          description: starting record
       responses:
         "200":
           description: A User object.

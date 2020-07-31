@@ -262,7 +262,7 @@ async def test_NetboxApiOperation_request_pagination(mnbro):
     page0 = MagicMock()
     page1 = MagicMock()
 
-    page0.next = 'http://testing/test?limit=50&offset=50'
+    page0.next = 'http://test/users?limit=50&offset=50'
     page0.results = ['1', '2', '3']
     page1.next = None
     page1.results = ['one', 'two', 'three']
@@ -283,7 +283,9 @@ async def test_NetboxApiOperation_request_pagination(mnbro):
 
     nb.request.assert_any_call(
         method='get',
-        url='http://testing/test?limit=50&offset=50'
+        url='http://test/users',
+        query_params={'name': 'test', 'limit': '50', 'offset': '50'},
+        body={}
     )
 
     assert ['1', '2', '3', 'one', 'two', 'three'] == results.results
