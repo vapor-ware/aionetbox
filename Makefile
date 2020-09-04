@@ -6,5 +6,5 @@ unit-test:
 lint:
 	tox -e lint
 
-ci-pypi-release:
+pypi-release:
 	tox -e release
