@@ -2,7 +2,7 @@
 from .api import AIONetbox
 
 __title__ = 'aionetbox'
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 __description__ = 'Async netbox library'
 __author__ = 'Marco Ceppi'
 __author_email__ = 'marco@vapor.io'
