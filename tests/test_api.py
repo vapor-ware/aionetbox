@@ -291,6 +291,19 @@ async def test_NetboxApiOperation_request_pagination(mnbro):
     assert ['1', '2', '3', 'one', 'two', 'three'] == results.results
 
 
+@pytest.mark.asyncio
+async def test_NetboxApiOperation_request_delete():
+    spec = ResolvingParser(str(here / 'data' / 'openapi-2.yaml'))
+    nb = AIONetbox(host='http://localhost', api_key='11', spec=spec, session=SessionMock())
+    nb.request = asynctest.CoroutineMock(return_value=ResponseMock())
+
+    op = NetboxApiOperation('users', 'users_delete', nb.config['users']['users_delete'], nb)
+
+    results = await op.request(userId=42)
+
+    assert results
+
+
 def test_NetboxApi():
     spec = ResolvingParser(str(here / 'data' / 'openapi-2.yaml'))
     nb = AIONetbox(host='http://localhost', api_key='11', spec=spec, session=SessionMock())

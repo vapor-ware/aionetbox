@@ -284,9 +284,9 @@ class NetboxApiOperation:
 
     async def _request(self, path, query, body):
         url = self.build_url(self.rest_config.get('url')).format(**path)
-
+        method = self.rest_config.get('method')
         resp = await self.client.request(
-            method=self.rest_config.get('method'),
+            method=method,
             url=url,
             query_params=query,
             body=body
@@ -294,6 +294,11 @@ class NetboxApiOperation:
 
         resp.raise_for_status()
         data = await resp.json()
+
+        if method.upper() == 'DELETE':
+            # if we're here, it means raise_for_status is cool and we're doing a delete, so lets just return a bool
+            return True
+
         return NetboxResponseObject.from_response(
             data=data,
             **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})

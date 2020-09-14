@@ -98,6 +98,27 @@ paths:
       tags:
       - users
       operationId: users_read
+    delete:
+      summary: Delete a user by ID.
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: integer
+          minimum: 1
+          description: The ID of the user to return.
+      responses:
+        "204":
+          description: Success.
+        "400":
+          description: The specified user ID is invalid (e.g. not a number).
+        "404":
+          description: A user with the specified ID was not found.
+        default:
+          description: Unexpected error
+      tags:
+      - users
+      operationId: users_delete
 definitions:
   User:
     type: object
