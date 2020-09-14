@@ -343,6 +343,29 @@ def test_AIONetbox_from_spec():
     assert a.host == 'https://api.example.com'
 
 
+@pytest.mark.asyncio
+async def test_AIONetbox_get_session_key():
+    spec = ResolvingParser(str(here / 'data' / 'openapi-2.yaml'))
+    nb = AIONetbox(host='http://localhost', api_key='11', spec=spec, session=SessionMock())
+    nb.request = asynctest.CoroutineMock(return_value=ResponseMock())
+
+    await nb.get_session_key('test')
+
+
+@pytest.mark.asyncio
+async def test_AIONetbox_get_session_key_fail():
+    spec = ResolvingParser(str(here / 'data' / 'openapi-2.yaml'))
+    nb = AIONetbox(host='http://localhost', api_key='11', spec=spec, session=SessionMock())
+
+    resp = ResponseMock()
+    nb.request = asynctest.CoroutineMock(return_value=resp)
+    resp.json = asynctest.CoroutineMock(side_effect=[Exception])
+
+    key = await nb.get_session_key('test')
+
+    assert key is None
+
+
 def test_AIONetbox_parse_spec():
     a = AIONetbox('http://localhost', '1122')
     spec = ResolvingParser(str(here / 'data' / 'openapi-2.yaml'))
