@@ -293,11 +293,12 @@ class NetboxApiOperation:
         )
 
         resp.raise_for_status()
-        data = await resp.json()
 
         if method.upper() == 'DELETE':
             # if we're here, it means raise_for_status is cool and we're doing a delete, so lets just return a bool
             return True
+
+        data = await resp.json()
 
         return NetboxResponseObject.from_response(
             data=data,
