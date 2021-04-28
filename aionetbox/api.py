@@ -15,6 +15,7 @@ from prance import ResolvingParser
 
 from aionetbox.exceptions import (
     BadRequest,
+    ClientFilterError,
     MissingRequiredParam,
     InvalidResponse,
     InvalidRequest,
@@ -292,7 +293,8 @@ class NetboxApiOperation:
             body=body
         )
 
-        resp.raise_for_status()
+        if resp.status >= 400:
+            raise ClientFilterError(message=await resp.json())
 
         if method.upper() == 'DELETE':
             # if we're here, it means raise_for_status is cool and we're doing a delete, so lets just return a bool
