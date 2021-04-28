@@ -11,6 +11,11 @@ class BadRequest(AIONetboxException):
     pass
 
 
+class ClientFilterError(AIONetboxException):
+    def __init__(self, message):
+        self.context = message
+
+
 class InvalidResponse(AIONetboxException):
     pass
 
