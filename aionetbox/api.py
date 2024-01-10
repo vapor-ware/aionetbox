@@ -3,11 +3,10 @@ import re
 import json
 import asyncio
 import logging
-import collections
 
 from aionetbox.utils import singleton
 
-from typing import Iterable
+from collections.abc import Iterable, Mapping
 from urllib.parse import urlparse, parse_qsl
 
 import aiohttp
@@ -281,11 +280,12 @@ class NetboxApiOperation:
         self.config = config
         self.rest_config = self.config.get('rest', {})
         self.operation = operation
+        self.http_method = self.rest_config.get('method')
         self.tag = tag
 
     async def _request(self, path, query, body):
         url = self.build_url(self.rest_config.get('url')).format(**path)
-        method = self.rest_config.get('method')
+        method = self.http_method
         resp = await self.client.request(
             method=method,
             url=url,
@@ -293,8 +293,12 @@ class NetboxApiOperation:
             body=body
         )
 
-        if resp.status >= 400:
-            raise ClientFilterError(message=await resp.json())
+        if not resp.ok:
+            try:
+                msg = await resp.json()
+            except Exception:
+                msg = {'status': resp.status}
+            raise ClientFilterError(msg, resp.status, resp.request_info)
 
         if method.upper() == 'DELETE':
             # if we're here, it means raise_for_status is cool and we're doing a delete, so lets just return a bool
@@ -399,7 +403,9 @@ class NetboxResponseObject:
     def from_response(cls, data, **kwargs):
 
         if 'type' not in kwargs:
-            raise AttributeError('type is a required parameter')
+            keys = data.keys()
+            description = kwargs.get('description', 'unknown')
+            raise AttributeError(f'type is a required parameter ({description=} / {keys=})')
 
         output = cls()
         if kwargs['type'] != 'object':
@@ -423,7 +429,7 @@ class NetboxResponseObject:
             value = val
 
             if ctype == 'object':
-                if isinstance(val, collections.Mapping):
+                if isinstance(val, Mapping):
                     value = cls.from_response(data=val, **spec)
             elif ctype == 'array':
                 # If we have an array of objects, make sure the value is iterable, then produce a list of objects
@@ -442,7 +448,7 @@ class NetboxResponseObject:
         if isinstance(obj, NetboxResponseObject):
             return obj.dict()
 
-        if isinstance(obj, collections.Mapping):
+        if isinstance(obj, Mapping):
             return {k: NetboxResponseObject._obj(v) for k, v in obj.items()}
 
         if isinstance(obj, list):

@@ -1,8 +1,9 @@
+from requests import Response
 import asynctest
 from unittest.mock import MagicMock
 
 
-class ResponseMock():
+class ResponseMock(Response):
 
     json = asynctest.CoroutineMock(return_value={})
     raise_for_status = asynctest.CoroutineMock()
