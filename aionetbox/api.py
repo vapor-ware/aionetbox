@@ -51,7 +51,8 @@ class AIONetbox:
             api_key: The API Token from Netbox to access Netbox API
             session: ClientSession for http requests
         """
-        spec = NetboxSpec('{}/api/swagger.json'.format(url))
+        url = url.rstrip('/')
+        spec = NetboxSpec(f'{url}/api/schema/')
 
         aionb = cls(url, api_key, private_key=private_key, spec=spec, session=session)
 
@@ -174,6 +175,7 @@ class AIONetbox:
         if isinstance(config, ResolvingParser):
             config = config.specification
 
+        config.setdefault('basePath','/')
         operations['_orig'] = config
         for path, data in config.get('paths', {}).items():
             for method in self._http_methods:
@@ -194,7 +196,7 @@ class AIONetbox:
 
                     rest_cfg = {
                         'url': path,
-                        'params': data.get('parameters', []),
+                        'params': payload.get('parameters', []),
                         'method': action,
                     }
 
@@ -223,9 +225,6 @@ class AIONetbox:
     async def close(self):
         """Close all open connections"""
         await self.session.close()
-
-    def __del__(self):
-        asyncio.ensure_future(self.session.close())
 
 
 class NetboxApi:
@@ -308,7 +307,7 @@ class NetboxApiOperation:
 
         return NetboxResponseObject.from_response(
             data=data,
-            **self.config.get('responses', {}).get(str(resp.status), {}).get('schema', {})
+            **self.config.get('responses', {}).get(str(resp.status), {}).get('content', {}).get(resp.content_type).get('schema', {})
         )
 
     async def request(self, **kwargs):
@@ -318,15 +317,6 @@ class NetboxApiOperation:
             self.client.session_key = await self.client.get_session_key(self.client.private_key)
 
         path, body, query = self.parse_params(kwargs)
-
-        if self.operation_method == 'list':
-            # netbox has terrible swagger spec generation and leaves out custom fields (cf)
-            keys_used = set(list(body.keys()) + list(query.keys()) + list(path.keys()))
-            remaining_vars = set(kwargs.keys()) - keys_used
-
-            for kw in remaining_vars:
-                if kw.startswith('cf_'):
-                    query[kw] = kwargs.get(kw)
 
         output = await self._request(path, query, body)
 
@@ -354,7 +344,7 @@ class NetboxApiOperation:
             'path': {},
         }
 
-        spec_parameters = self.config.get('parameters', []) + self.rest_config.get('params', [])
+        spec_parameters = self.rest_config.get('params', [])
         for sp in spec_parameters:
             if sp['name'] not in params and sp['required']:
                 raise MissingRequiredParam('{} is a required parameter'.format(sp['name']))
